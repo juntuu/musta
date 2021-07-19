@@ -66,6 +66,7 @@ from black.mode import (
     FUTURE_FLAG_TO_FEATURE,
     VERSION_TO_FEATURES,
     Feature,
+    Indent,
     Mode,
     TargetVersion,
     supports_feature,
@@ -421,6 +422,21 @@ def validate_regex(
     callback=read_pyproject_toml,
     help="Read configuration from FILE path.",
 )
+@click.option(
+    "--tabs/--no-tabs",
+    is_flag=True,
+    help="Use tab for indentation.",
+)
+@click.option(
+    "--indent-width",
+    type=click.IntRange(min=1),
+    metavar="WIDTH",
+    default=4,
+    help=(
+        "Width of single indentation for line length calculations."
+        " When not using --tabs, this also sets the number of spaces to use."
+    ),
+)
 @click.pass_context
 def main(  # noqa: C901
     ctx: click.Context,
@@ -450,6 +466,8 @@ def main(  # noqa: C901
     workers: Optional[int],
     src: Tuple[str, ...],
     config: Optional[str],
+    tabs: bool,
+    indent_width: int,
 ) -> None:
     """The uncompromising code formatter."""
     ctx.ensure_object(dict)
@@ -541,6 +559,7 @@ def main(  # noqa: C901
         experimental_string_processing=experimental_string_processing,
         preview=preview,
         python_cell_magics=set(python_cell_magics),
+        indent=Indent(tabs, indent_width),
     )
 
     if code is not None:

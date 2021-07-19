@@ -432,10 +432,9 @@ class Line:
         if not self:
             return "\n"
 
-        indent = "    " * self.depth
         leaves = iter(self.leaves)
         first = next(leaves)
-        res = f"{first.prefix}{indent}{first.value}"
+        res = f"{first.prefix}{self.mode.indent(self.depth)}{first.value}"
         for leaf in leaves:
             res += str(leaf)
         for comment in itertools.chain.from_iterable(self.comments.values()):
@@ -651,8 +650,13 @@ def is_line_short_enough(line: Line, *, line_length: int, line_str: str = "") ->
     """
     if not line_str:
         line_str = line_to_string(line)
+    effective_length = (
+        len(line_str)
+        - len(line.mode.indent(line.depth))
+        + line.depth * line.mode.indent.width
+    )
     return (
-        len(line_str) <= line_length
+        effective_length <= line_length
         and "\n" not in line_str  # multiline strings
         and not line.contains_standalone_comments()
     )

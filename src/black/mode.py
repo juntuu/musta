@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from hashlib import sha256
 from operator import attrgetter
-from typing import Dict, Set
+from typing import Dict, NamedTuple, Set
 from warnings import warn
 
 if sys.version_info < (3, 8):
@@ -18,6 +18,17 @@ else:
     from typing import Final
 
 from black.const import DEFAULT_LINE_LENGTH
+
+
+class Indent(NamedTuple):
+    tab: bool = False
+    width: int = 4
+
+    def __call__(self, depth: int) -> str:
+        return str(self) * depth
+
+    def __str__(self) -> str:
+        return "\t" if self.tab else " " * self.width
 
 
 class TargetVersion(Enum):
@@ -175,6 +186,7 @@ class Mode:
     experimental_string_processing: bool = False
     python_cell_magics: Set[str] = field(default_factory=set)
     preview: bool = False
+    indent: Indent = Indent()
 
     def __post_init__(self) -> None:
         if self.experimental_string_processing:
@@ -214,5 +226,7 @@ class Mode:
             str(int(self.experimental_string_processing)),
             str(int(self.preview)),
             sha256((",".join(sorted(self.python_cell_magics))).encode()).hexdigest(),
+            str(int(self.indent.tab)),
+            str(self.indent.width),
         ]
         return ".".join(parts)
