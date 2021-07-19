@@ -66,7 +66,7 @@ from black.handle_ipynb_magics import (
 )
 from black.linegen import LN, LineGenerator, transform_line
 from black.lines import EmptyLineTracker, LinesBlock
-from black.mode import FUTURE_FLAG_TO_FEATURE, VERSION_TO_FEATURES, Feature
+from black.mode import FUTURE_FLAG_TO_FEATURE, VERSION_TO_FEATURES, Feature, Indent
 from black.mode import Mode as Mode  # re-exported
 from black.mode import Preview, TargetVersion, supports_feature
 from black.nodes import STARS, is_number_token, is_simple_decorator_expression, syms
@@ -514,6 +514,21 @@ def validate_regex(
     callback=read_pyproject_toml,
     help="Read configuration options from a configuration file.",
 )
+@click.option(
+    "--tabs/--no-tabs",
+    is_flag=True,
+    help="Use tab for indentation.",
+)
+@click.option(
+    "--indent-width",
+    type=click.IntRange(min=1),
+    metavar="WIDTH",
+    default=4,
+    help=(
+        "Width of single indentation for line length calculations."
+        " When not using --tabs, this also sets the number of spaces to use."
+    ),
+)
 @click.pass_context
 def main(  # noqa: C901
     ctx: click.Context,
@@ -545,6 +560,8 @@ def main(  # noqa: C901
     workers: Optional[int],
     src: Tuple[str, ...],
     config: Optional[str],
+    tabs: bool,
+    indent_width: int,
 ) -> None:
     """The uncompromising code formatter."""
     ctx.ensure_object(dict)
@@ -632,6 +649,7 @@ def main(  # noqa: C901
         unstable=unstable,
         python_cell_magics=set(python_cell_magics),
         enabled_features=set(enable_unstable_feature),
+        indent=Indent(tabs, indent_width),
     )
 
     lines: List[Tuple[int, int]] = []

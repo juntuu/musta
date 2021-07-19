@@ -8,9 +8,20 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from hashlib import sha256
 from operator import attrgetter
-from typing import Dict, Final, Set
+from typing import Dict, Final, NamedTuple, Set
 
 from black.const import DEFAULT_LINE_LENGTH
+
+
+class Indent(NamedTuple):
+    tab: bool = False
+    width: int = 4
+
+    def __call__(self, depth: int) -> str:
+        return str(self) * depth
+
+    def __str__(self) -> str:
+        return "\t" if self.tab else " " * self.width
 
 
 class TargetVersion(Enum):
@@ -240,6 +251,7 @@ class Mode:
     preview: bool = False
     unstable: bool = False
     enabled_features: Set[Preview] = field(default_factory=set)
+    indent: Indent = Indent()
 
     def __contains__(self, feature: Preview) -> bool:
         """
@@ -286,5 +298,7 @@ class Mode:
             str(int(self.magic_trailing_comma)),
             str(int(self.preview)),
             features_and_magics,
+            str(int(self.indent.tab)),
+            str(self.indent.width),
         ]
         return ".".join(parts)

@@ -492,10 +492,9 @@ class Line:
         if not self:
             return "\n"
 
-        indent = "    " * self.depth
         leaves = iter(self.leaves)
         first = next(leaves)
-        res = f"{first.prefix}{indent}{first.value}"
+        res = f"{first.prefix}{self.mode.indent(self.depth)}{first.value}"
         for leaf in leaves:
             res += str(leaf)
         for comment in itertools.chain.from_iterable(self.comments.values()):
@@ -804,6 +803,12 @@ def append_leaves(
             new_line.append(comment_leaf, preformatted=True)
 
 
+def effective_length(line: Line, width: int):
+    return (
+        width - len(line.mode.indent(line.depth)) + line.depth * line.mode.indent.width
+    )
+
+
 def is_line_short_enough(  # noqa: C901
     line: Line, *, mode: Mode, line_str: str = ""
 ) -> bool:
@@ -817,7 +822,7 @@ def is_line_short_enough(  # noqa: C901
 
     if Preview.multiline_string_handling not in mode:
         return (
-            str_width(line_str) <= mode.line_length
+            effective_length(line, str_width(line_str)) <= mode.line_length
             and "\n" not in line_str  # multiline strings
             and not line.contains_standalone_comments()
         )
@@ -826,10 +831,13 @@ def is_line_short_enough(  # noqa: C901
         return False
     if "\n" not in line_str:
         # No multiline strings (MLS) present
-        return str_width(line_str) <= mode.line_length
+        return effective_length(line, str_width(line_str)) <= mode.line_length
 
     first, *_, last = line_str.split("\n")
-    if str_width(first) > mode.line_length or str_width(last) > mode.line_length:
+    if (
+        effective_length(line, str_width(first)) > mode.line_length
+        or effective_length(line, str_width(last)) > mode.line_length
+    ):
         return False
 
     # Traverse the AST to examine the context of the multiline string (MLS),
