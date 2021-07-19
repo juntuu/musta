@@ -39,6 +39,8 @@ UNSTABLE = "X-Unstable"
 ENABLE_UNSTABLE_FEATURE = "X-Enable-Unstable-Feature"
 FAST_OR_SAFE_HEADER = "X-Fast-Or-Safe"
 DIFF_HEADER = "X-Diff"
+TABS_HEADER = "X-Tabs"
+INDENT_WIDTH_HEADER = "X-Indent-Width"
 
 BLACK_HEADERS = [
     PROTOCOL_VERSION_HEADER,
@@ -52,6 +54,8 @@ BLACK_HEADERS = [
     ENABLE_UNSTABLE_FEATURE,
     FAST_OR_SAFE_HEADER,
     DIFF_HEADER,
+    TABS_HEADER,
+    INDENT_WIDTH_HEADER,
 ]
 
 # Response headers
@@ -203,6 +207,19 @@ def parse_mode(headers: MultiMapping[str]) -> black.Mode:
                     f"Invalid value for {ENABLE_UNSTABLE_FEATURE}: {piece}",
                 ) from None
 
+    indent = black.Indent()
+    if headers.get(TABS_HEADER):
+        indent = indent._replace(tab=True)
+    try:
+        indent_width = headers.get(INDENT_WIDTH_HEADER)
+        if indent_width:
+            indent_width = int(indent_width)
+            if indent_width < 1:
+                raise ValueError
+            indent = indent._replace(width=indent_width)
+    except ValueError:
+        raise HeaderError("Invalid indent width header value") from None
+
     return black.FileMode(
         target_versions=versions,
         is_pyi=pyi,
@@ -213,6 +230,7 @@ def parse_mode(headers: MultiMapping[str]) -> black.Mode:
         preview=preview,
         unstable=unstable,
         enabled_features=enable_features,
+        indent=indent,
     )
 
 
