@@ -36,6 +36,8 @@ SKIP_MAGIC_TRAILING_COMMA = "X-Skip-Magic-Trailing-Comma"
 PREVIEW = "X-Preview"
 FAST_OR_SAFE_HEADER = "X-Fast-Or-Safe"
 DIFF_HEADER = "X-Diff"
+TABS_HEADER = "X-Tabs"
+INDENT_WIDTH_HEADER = "X-Indent-Width"
 
 BLACK_HEADERS = [
     PROTOCOL_VERSION_HEADER,
@@ -47,6 +49,8 @@ BLACK_HEADERS = [
     PREVIEW,
     FAST_OR_SAFE_HEADER,
     DIFF_HEADER,
+    TABS_HEADER,
+    INDENT_WIDTH_HEADER,
 ]
 
 # Response headers
@@ -120,6 +124,19 @@ async def handle(request: web.Request, executor: Executor) -> web.Response:
         fast = False
         if request.headers.get(FAST_OR_SAFE_HEADER, "safe") == "fast":
             fast = True
+        indent = black.Indent()
+        if request.headers.get(TABS_HEADER):
+            indent = indent._replace(tab=True)
+        try:
+            indent_width = request.headers.get(INDENT_WIDTH_HEADER)
+            if indent_width:
+                indent_width = int(indent_width)
+                if indent_width < 1:
+                    raise ValueError
+                indent = indent._replace(width=indent_width)
+        except ValueError:
+            return web.Response(status=400, text="Invalid indent width header value")
+
         mode = black.FileMode(
             target_versions=versions,
             is_pyi=pyi,
@@ -128,6 +145,7 @@ async def handle(request: web.Request, executor: Executor) -> web.Response:
             string_normalization=not skip_string_normalization,
             magic_trailing_comma=not skip_magic_trailing_comma,
             preview=preview,
+            indent=indent,
         )
         req_bytes = await request.content.read()
         charset = request.charset if request.charset is not None else "utf8"
