@@ -38,6 +38,7 @@ FAST_OR_SAFE_HEADER = "X-Fast-Or-Safe"
 DIFF_HEADER = "X-Diff"
 TABS_HEADER = "X-Tabs"
 INDENT_WIDTH_HEADER = "X-Indent-Width"
+SNIFF_HEADER = "X-Sniff"
 
 BLACK_HEADERS = [
     PROTOCOL_VERSION_HEADER,
@@ -51,6 +52,7 @@ BLACK_HEADERS = [
     DIFF_HEADER,
     TABS_HEADER,
     INDENT_WIDTH_HEADER,
+    SNIFF_HEADER,
 ]
 
 # Response headers
@@ -124,18 +126,36 @@ async def handle(request: web.Request, executor: Executor) -> web.Response:
         fast = False
         if request.headers.get(FAST_OR_SAFE_HEADER, "safe") == "fast":
             fast = True
+        sniff = request.headers.get(SNIFF_HEADER)
         indent = black.Indent()
         if request.headers.get(TABS_HEADER):
+            if sniff:
+                return web.Response(
+                    status=400, text="Can not specify both sniff and tabs headers"
+                )
             indent = indent._replace(tab=True)
         try:
             indent_width = request.headers.get(INDENT_WIDTH_HEADER)
             if indent_width:
+                if sniff:
+                    return web.Response(
+                        status=400,
+                        text="Can not specify both sniff and indent_width headers",
+                    )
                 indent_width = int(indent_width)
                 if indent_width < 1:
                     raise ValueError
                 indent = indent._replace(width=indent_width)
         except ValueError:
             return web.Response(status=400, text="Invalid indent width header value")
+
+        req_bytes = await request.content.read()
+        charset = request.charset if request.charset is not None else "utf8"
+        req_str = req_bytes.decode(charset)
+        then = datetime.utcnow()
+
+        if sniff:
+            indent = indent._replace(tab="\n\t" in req_str)
 
         mode = black.FileMode(
             target_versions=versions,
@@ -147,10 +167,6 @@ async def handle(request: web.Request, executor: Executor) -> web.Response:
             preview=preview,
             indent=indent,
         )
-        req_bytes = await request.content.read()
-        charset = request.charset if request.charset is not None else "utf8"
-        req_str = req_bytes.decode(charset)
-        then = datetime.utcnow()
 
         header = ""
         if skip_source_first_line:
