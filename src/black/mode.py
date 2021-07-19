@@ -252,6 +252,7 @@ class Mode:
     unstable: bool = False
     enabled_features: Set[Preview] = field(default_factory=set)
     indent: Indent = Indent()
+    sniff_tabs: bool = False
 
     def __contains__(self, feature: Preview) -> bool:
         """
@@ -300,5 +301,6 @@ class Mode:
             features_and_magics,
             str(int(self.indent.tab)),
             str(self.indent.width),
+            str(int(self.sniff_tabs)),
         ]
         return ".".join(parts)

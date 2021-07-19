@@ -41,6 +41,7 @@ FAST_OR_SAFE_HEADER = "X-Fast-Or-Safe"
 DIFF_HEADER = "X-Diff"
 TABS_HEADER = "X-Tabs"
 INDENT_WIDTH_HEADER = "X-Indent-Width"
+SNIFF_HEADER = "X-Sniff"
 
 BLACK_HEADERS = [
     PROTOCOL_VERSION_HEADER,
@@ -56,6 +57,7 @@ BLACK_HEADERS = [
     DIFF_HEADER,
     TABS_HEADER,
     INDENT_WIDTH_HEADER,
+    SNIFF_HEADER,
 ]
 
 # Response headers
@@ -207,12 +209,21 @@ def parse_mode(headers: MultiMapping[str]) -> black.Mode:
                     f"Invalid value for {ENABLE_UNSTABLE_FEATURE}: {piece}",
                 ) from None
 
+    sniff = headers.get(SNIFF_HEADER)
     indent = black.Indent()
     if headers.get(TABS_HEADER):
+        if sniff:
+            raise HeaderError(
+                "Can not specify both sniff and tabs headers"
+            ) from None
         indent = indent._replace(tab=True)
     try:
         indent_width = headers.get(INDENT_WIDTH_HEADER)
         if indent_width:
+            if sniff:
+                raise HeaderError(
+                    "Can not specify both sniff and indent_width headers",
+                ) from None
             indent_width = int(indent_width)
             if indent_width < 1:
                 raise ValueError
@@ -231,6 +242,7 @@ def parse_mode(headers: MultiMapping[str]) -> black.Mode:
         unstable=unstable,
         enabled_features=enable_features,
         indent=indent,
+        sniff_tabs=sniff,
     )
 
 
