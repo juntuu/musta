@@ -428,6 +428,11 @@ def validate_regex(
     help="Use tab for indentation.",
 )
 @click.option(
+    "--sniff-tabs",
+    is_flag=True,
+    help="Detect tabs from file contents.",
+)
+@click.option(
     "--indent-width",
     type=click.IntRange(min=1),
     metavar="WIDTH",
@@ -467,6 +472,7 @@ def main(  # noqa: C901
     src: Tuple[str, ...],
     config: Optional[str],
     tabs: bool,
+    sniff_tabs: bool,
     indent_width: int,
 ) -> None:
     """The uncompromising code formatter."""
@@ -560,6 +566,7 @@ def main(  # noqa: C901
         preview=preview,
         python_cell_magics=set(python_cell_magics),
         indent=Indent(tabs, indent_width),
+        sniff_tabs=sniff_tabs,
     )
 
     if code is not None:
@@ -935,6 +942,9 @@ def format_file_contents(src_contents: str, *, fast: bool, mode: Mode) -> FileCo
     """
     if not src_contents.strip():
         raise NothingChanged
+
+    if mode.sniff_tabs:
+        mode.indent = mode.indent._replace(tab="\n\t" in src_contents)
 
     if mode.is_ipynb:
         dst_contents = format_ipynb_string(src_contents, fast=fast, mode=mode)

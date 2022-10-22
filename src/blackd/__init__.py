@@ -126,7 +126,7 @@ async def handle(request: web.Request, executor: Executor) -> web.Response:
         fast = False
         if request.headers.get(FAST_OR_SAFE_HEADER, "safe") == "fast":
             fast = True
-        sniff = request.headers.get(SNIFF_HEADER)
+        sniff = bool(request.headers.get(SNIFF_HEADER))
         indent = black.Indent()
         if request.headers.get(TABS_HEADER):
             if sniff:
@@ -154,9 +154,6 @@ async def handle(request: web.Request, executor: Executor) -> web.Response:
         req_str = req_bytes.decode(charset)
         then = datetime.utcnow()
 
-        if sniff:
-            indent = indent._replace(tab="\n\t" in req_str)
-
         mode = black.FileMode(
             target_versions=versions,
             is_pyi=pyi,
@@ -166,6 +163,7 @@ async def handle(request: web.Request, executor: Executor) -> web.Response:
             magic_trailing_comma=not skip_magic_trailing_comma,
             preview=preview,
             indent=indent,
+            sniff_tabs=sniff,
         )
 
         header = ""

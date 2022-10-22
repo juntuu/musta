@@ -187,6 +187,7 @@ class Mode:
     python_cell_magics: Set[str] = field(default_factory=set)
     preview: bool = False
     indent: Indent = Indent()
+    sniff_tabs: bool = False
 
     def __post_init__(self) -> None:
         if self.experimental_string_processing:
@@ -228,5 +229,6 @@ class Mode:
             sha256((",".join(sorted(self.python_cell_magics))).encode()).hexdigest(),
             str(int(self.indent.tab)),
             str(self.indent.width),
+            str(int(self.sniff_tabs)),
         ]
         return ".".join(parts)
