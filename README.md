@@ -1,3 +1,50 @@
+## About this fork
+
+### Why
+
+Because I like tabs better. Otherwise black is good tool.
+
+There has been multiple requests to add option for tabs in the black project,
+with compelling arguments. But they have made it clear that it will not
+happen.
+
+I'm not going to argue one way or the other, but I've stated my own
+preference. That is why I decided to add the option, for my own personal use,
+and the diff turned out to be pretty manageable.
+
+### Differences
+
+This fork adds three options to control the indentation:
+
+- `--tabs` (and `--no-tabs`)
+- `--indent-width`
+- `--sniff-tabs`
+
+The `--tabs` option switches indentation from spaces to (one) tab per
+indent.
+
+The `--indent-width` specifies just that, how wide one indent should be. When
+using spaces, this is also the number of characters per indent. The indent width
+matters less for the reader when using tabs, but for formatting it will affect
+the line length limit.
+
+Lastly, the `--sniff-tabs` option enables *very simple* heuristic to detect
+use of tabs from the file content. I've found this useful for editing one off
+files, but I strongly recommend *not* to use this in a project.
+
+The blackd has corresponding headers:
+
+- `X-Tabs`
+- `X-Indent-Width`
+- `X-Sniff`
+
+### What next
+
+I may update this every now and then, just check the latest commit date.
+Nothing more, now back to the upstream readme.
+
+---
+
 [![Black Logo](https://raw.githubusercontent.com/psf/black/main/docs/_static/logo2-readme.png)](https://black.readthedocs.io/en/stable/)
 
 <h2 align="center">The Uncompromising Code Formatter</h2>
